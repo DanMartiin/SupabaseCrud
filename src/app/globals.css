@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile-first responsive improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Ensure touch targets are at least 44px */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve text readability on mobile */
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Button Styles */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background;
+  }
+
+  .btn-sm {
+    @apply h-8 px-3 text-xs;
+  }
+
+  .btn-md {
+    @apply h-10 px-4 py-2;
+  }
+
+  .btn-lg {
+    @apply h-11 px-8;
+  }
+
+  /* Primary Button - Blue */
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800;
+  }
+
+  /* Secondary Button - Gray */
+  .btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700 active:bg-gray-800;
+  }
+
+  /* Success Button - Green */
+  .btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 active:bg-green-800;
+  }
+
+  /* Warning Button - Yellow/Orange */
+  .btn-warning {
+    @apply bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700;
+  }
+
+  /* Danger Button - Red */
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  /* Info Button - Cyan */
+  .btn-info {
+    @apply bg-cyan-600 text-white hover:bg-cyan-700 active:bg-cyan-800;
+  }
+
+  /* Purple Button */
+  .btn-purple {
+    @apply bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800;
+  }
+
+  /* Pink Button */
+  .btn-pink {
+    @apply bg-pink-600 text-white hover:bg-pink-700 active:bg-pink-800;
+  }
+
+  /* Outline Buttons */
+  .btn-outline {
+    @apply border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100;
+  }
+
+  .btn-outline-primary {
+    @apply border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100;
+  }
+
+  .btn-outline-success {
+    @apply border-green-600 text-green-600 hover:bg-green-50 active:bg-green-100;
+  }
+
+  .btn-outline-warning {
+    @apply border-yellow-500 text-yellow-600 hover:bg-yellow-50 active:bg-yellow-100;
+  }
+
+  .btn-outline-danger {
+    @apply border-red-600 text-red-600 hover:bg-red-50 active:bg-red-100;
+  }
+
+  .btn-outline-info {
+    @apply border-cyan-600 text-cyan-600 hover:bg-cyan-50 active:bg-cyan-100;
+  }
+
+  .btn-outline-purple {
+    @apply border-purple-600 text-purple-600 hover:bg-purple-50 active:bg-purple-100;
+  }
+
+  .btn-outline-pink {
+    @apply border-pink-600 text-pink-600 hover:bg-pink-50 active:bg-pink-100;
+  }
+
+  /* Destructive Button - Red (for delete actions) */
+  .btn-destructive {
+    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  /* Ghost Button */
+  .btn-ghost {
+    @apply bg-transparent text-gray-700 hover:bg-gray-100 active:bg-gray-200;
+  }
+
+  /* Link Button */
+  .btn-link {
+    @apply bg-transparent text-blue-600 hover:text-blue-700 hover:underline;
+  }
+
+  /* Error Button - Red */
+  .btn-error {
+    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  .btn-outline-error {
+    @apply border-red-600 text-red-600 hover:bg-red-50 active:bg-red-100;
+  }
+
+  /* Warning Button - Orange */
+  .btn-warning {
+    @apply bg-orange-500 text-white hover:bg-orange-600 active:bg-orange-700;
+  }
+
+  .btn-outline-warning {
+    @apply border-orange-500 text-orange-600 hover:bg-orange-50 active:bg-orange-100;
+  }
+  
+}
+
+/* Error and Warning Utility Classes */
+@layer utilities {
+  .text-error {
+    @apply text-red-600;
+  }
+
+  .text-warning {
+    @apply text-orange-600;
+  }
+
+  .bg-error {
+    @apply bg-red-50;
+  }
+
+  .bg-warning {
+    @apply bg-orange-50;
+  }
+
+  .border-error {
+    @apply border-red-200;
+  }
+
+  .border-warning {
+    @apply border-orange-200;
+  }
+
+  .ring-error {
+    @apply ring-red-500;
+  }
+
+  .ring-warning {
+    @apply ring-orange-500;
+  }
+
+  /* Error and Warning Alert Styles */
+  .alert-error {
+    @apply bg-red-50 border border-red-200 text-red-800 rounded-md p-4;
+  }
+
+  .alert-warning {
+    @apply bg-orange-50 border border-orange-200 text-orange-800 rounded-md p-4;
+  }
+
+  .alert-success {
+    @apply bg-green-50 border border-green-200 text-green-800 rounded-md p-4;
+  }
+
+  .alert-info {
+    @apply bg-blue-50 border border-blue-200 text-blue-800 rounded-md p-4;
+  }
+
+  /* Card Styles */
+  .card {
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200;
+  }
+
+  .card-title {
+    @apply text-xl font-semibold text-gray-900;
+  }
+
+  .card-description {
+    @apply text-sm text-gray-600 mt-1;
+  }
+
+  .card-content {
+    @apply px-6 py-4;
+  }
+
+  /* Input Styles */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Text Color Utilities */
+  .text-primary {
+    @apply text-blue-600;
+  }
+
+  .text-destructive {
+    @apply text-red-600;
+  }
+
+  .text-muted-foreground {
+    @apply text-gray-500;
+  }
+
+  /* Line Clamp Utility */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Focus Ring Utilities */
+  .focus-ring-primary {
+    @apply focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  .focus-ring-error {
+    @apply focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  /* Spacing Utilities */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+
+  /* Responsive Utilities */
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}

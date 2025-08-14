@@ -1,0 +1,48 @@
+{
+  "name": "crud-operations",
+  "version": "1.0.0",
+  "description": "CRUD operations with Supabase DB, Authentication, and Admin Panel",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.3.2",
+    "@stripe/react-stripe-js": "^3.9.0",
+    "@stripe/stripe-js": "^2.1.11",
+    "@supabase/auth-ui-react": "^0.4.6",
+    "@supabase/auth-ui-shared": "^0.1.8",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.38.4",
+    "lucide-react": "^0.294.0",
+    "next": "^14.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.48.2",
+    "stripe": "^14.7.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.53.0",
+    "eslint-config-next": "^14.0.3",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.2.2"
+  },
+  "keywords": [
+    "nextjs",
+    "supabase",
+    "crud",
+    "typescript",
+    "authentication"
+  ],
+  "author": "",
+  "license": "ISC"
+}
