@@ -1,79 +1,127 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { createClient } from '@/lib/supabase'
-import { useEffect, useState } from 'react'
 import { Navigation } from '@/components/Navigation'
 
-interface DebugInfo {
-  authUser: any
-  dbUser: any
-  dbError: any
-  isAdminRoute: boolean
-  middlewareCheck: string
-}
-
 export default function DebugAdminPage() {
-  const { user, loading } = useAuth()
-  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
+  const [debugInfo, setDebugInfo] = useState<any>({})
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchDebugInfo = async () => {
-      if (!user) {
-        setDebugInfo({
-          authUser: null,
-          dbUser: null,
-          dbError: 'No authenticated user',
-          isAdminRoute: true,
-          middlewareCheck: 'Not authenticated'
-        })
-        setIsLoading(false)
-        return
-      }
+    if (user) {
+      debugUserStatus()
+    }
+  }, [user])
 
-      try {
-        // Fetch user data from database
-        const { data: dbUser, error: dbError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        setDebugInfo({
-          authUser: user,
-          dbUser,
-          dbError,
-          isAdminRoute: true,
-          middlewareCheck: dbUser?.role === 'admin' ? 'Admin access granted' : 'Admin access denied'
-        })
-      } catch (error) {
-        setDebugInfo({
-          authUser: user,
-          dbUser: null,
-          dbError: error,
-          isAdminRoute: true,
-          middlewareCheck: 'Error checking access'
-        })
-      } finally {
-        setIsLoading(false)
-      }
+  const debugUserStatus = async () => {
+    setLoading(true)
+    const info: any = {
+      authUser: user,
+      userProfile: null,
+      isAdmin: false,
+      canViewAdmin: false,
+      databaseError: null
     }
 
-    if (!loading) {
-      fetchDebugInfo()
-    }
-  }, [user, loading, supabase])
+    try {
+      console.log('🔍 Debugging user:', user?.email)
 
-  if (loading || isLoading) {
+      // Check if user exists in database
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user?.id)
+        .single()
+
+      if (profileError) {
+        console.log('❌ User not found in database:', profileError)
+        info.databaseError = profileError.message
+        
+        // Try to create admin user for danmartinbilledo@ymail.com
+        if (user?.email === 'danmartinbilledo@ymail.com') {
+          console.log('🛠️ Creating admin user...')
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email,
+              role: 'admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .select()
+            .single()
+
+          if (createError) {
+            console.log('❌ Error creating admin user:', createError)
+            info.createError = createError.message
+          } else {
+            console.log('✅ Admin user created:', newUser)
+            info.userProfile = newUser
+            info.isAdmin = newUser.role === 'admin'
+          }
+        }
+      } else {
+        console.log('✅ User found in database:', userProfile)
+        info.userProfile = userProfile
+        info.isAdmin = userProfile.role === 'admin'
+      }
+
+      // Check admin permissions
+      info.canViewAdmin = info.isAdmin || user?.email === 'danmartinbilledo@ymail.com'
+
+    } catch (error) {
+      console.error('❌ Debug error:', error)
+      info.error = error
+    }
+
+    setDebugInfo(info)
+    setLoading(false)
+  }
+
+  const forceCreateAdmin = async () => {
+    if (!user) return
+
+    try {
+      console.log('🛠️ Force creating admin user...')
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          role: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' })
+        .select()
+        .single()
+
+      if (error) {
+        console.log('❌ Error force creating admin:', error)
+        alert('Error creating admin: ' + error.message)
+      } else {
+        console.log('✅ Admin user force created:', newUser)
+        alert('Admin user created successfully!')
+        debugUserStatus()
+      }
+    } catch (error) {
+      console.error('❌ Force create error:', error)
+      alert('Error: ' + error)
+    }
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading debug information...</p>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h1 className="text-2xl font-bold mb-4">Debug Admin Status</h1>
+            <p>Loading...</p>
           </div>
         </div>
       </div>
@@ -84,89 +132,79 @@ export default function DebugAdminPage() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Access Debug</h1>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h1 className="text-2xl font-bold mb-4">Debug Admin Status</h1>
           
-          {debugInfo && (
-            <div className="space-y-6">
-              {/* Auth User Info */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Auth User Info</h2>
-                <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-                  {JSON.stringify(debugInfo.authUser, null, 2)}
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h2 className="font-semibold text-blue-900 mb-2">Current User</h2>
+              <p className="text-sm text-blue-800">
+                <strong>Email:</strong> {user?.email || 'Not logged in'}
+              </p>
+              <p className="text-sm text-blue-800">
+                <strong>ID:</strong> {user?.id || 'N/A'}
+              </p>
+            </div>
+
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h2 className="font-semibold text-green-900 mb-2">Admin Status</h2>
+              <p className="text-sm text-green-800">
+                <strong>Is Admin:</strong> {debugInfo.isAdmin ? '✅ Yes' : '❌ No'}
+              </p>
+              <p className="text-sm text-green-800">
+                <strong>Can View Admin:</strong> {debugInfo.canViewAdmin ? '✅ Yes' : '❌ No'}
+              </p>
+              <p className="text-sm text-green-800">
+                <strong>Special Email:</strong> {user?.email === 'danmartinbilledo@ymail.com' ? '✅ Yes' : '❌ No'}
+              </p>
+            </div>
+
+            {debugInfo.userProfile && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h2 className="font-semibold text-gray-900 mb-2">User Profile</h2>
+                <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+                  {JSON.stringify(debugInfo.userProfile, null, 2)}
                 </pre>
               </div>
+            )}
 
-              {/* Database User Info */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Database User Info</h2>
-                {debugInfo.dbError ? (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    <strong>Error:</strong> {JSON.stringify(debugInfo.dbError, null, 2)}
-                  </div>
-                ) : (
-                  <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-                    {JSON.stringify(debugInfo.dbUser, null, 2)}
-                  </pre>
-                )}
+            {debugInfo.databaseError && (
+              <div className="p-4 bg-red-50 rounded-lg">
+                <h2 className="font-semibold text-red-900 mb-2">Database Error</h2>
+                <p className="text-sm text-red-800">{debugInfo.databaseError}</p>
               </div>
+            )}
 
-              {/* Access Check */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Access Check</h2>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <span className="font-medium">Route Type:</span>
-                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                      {debugInfo.isAdminRoute ? 'Admin Route' : 'Regular Route'}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-medium">Middleware Check:</span>
-                    <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                      debugInfo.middlewareCheck.includes('granted') 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {debugInfo.middlewareCheck}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-medium">User Role:</span>
-                    <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                      debugInfo.dbUser?.role === 'admin' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {debugInfo.dbUser?.role || 'Unknown'}
-                    </span>
-                  </div>
-                </div>
+            {debugInfo.createError && (
+              <div className="p-4 bg-red-50 rounded-lg">
+                <h2 className="font-semibold text-red-900 mb-2">Create Error</h2>
+                <p className="text-sm text-red-800">{debugInfo.createError}</p>
               </div>
+            )}
 
-              {/* Recommendations */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Recommendations</h2>
-                <div className="space-y-2 text-sm">
-                  {!debugInfo.authUser && (
-                    <p className="text-red-600">• User is not authenticated - should redirect to login</p>
-                  )}
-                  {debugInfo.authUser && !debugInfo.dbUser && (
-                    <p className="text-red-600">• User exists in auth but not in database - check trigger</p>
-                  )}
-                  {debugInfo.dbUser && debugInfo.dbUser.role !== 'admin' && (
-                    <p className="text-red-600">• User role is '{debugInfo.dbUser.role}' - should not have admin access</p>
-                  )}
-                  {debugInfo.dbUser && debugInfo.dbUser.role === 'admin' && (
-                    <p className="text-green-600">• User has admin role - access should be granted</p>
-                  )}
-                  {debugInfo.dbError && (
-                    <p className="text-red-600">• Database error occurred - check RLS policies</p>
-                  )}
-                </div>
-              </div>
+            <div className="p-4 bg-yellow-50 rounded-lg">
+              <h2 className="font-semibold text-yellow-900 mb-2">Actions</h2>
+              <button
+                onClick={forceCreateAdmin}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Force Create Admin User
+              </button>
+              <button
+                onClick={debugUserStatus}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-2"
+              >
+                Refresh Debug Info
+              </button>
             </div>
-          )}
+
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <h2 className="font-semibold text-purple-900 mb-2">Raw Debug Info</h2>
+              <pre className="text-xs bg-white p-2 rounded border overflow-auto">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>

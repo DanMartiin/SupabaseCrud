@@ -28,8 +28,8 @@ export function AdminRoute({
         return
       }
 
-      // If user is not admin, redirect to specified page
-      if (user.role !== 'admin') {
+      // If user is not admin and not the specific admin email, redirect to specified page
+      if (user.role !== 'admin' && user.email !== 'danmartinbilledo@ymail.com') {
         router.push(redirectTo)
         return
       }
@@ -51,7 +51,7 @@ export function AdminRoute({
   }
 
   // Show fallback or default access denied message
-  if (!user || user.role !== 'admin') {
+  if (!user || (user.role !== 'admin' && user.email !== 'danmartinbilledo@ymail.com')) {
     if (fallback) {
       return <>{fallback}</>
     }

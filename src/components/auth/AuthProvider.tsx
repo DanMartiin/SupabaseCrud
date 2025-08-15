@@ -62,14 +62,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (error.code === 'PGRST116') { // No rows returned
                 console.log('AuthProvider: User not found in database, creating...')
                 try {
+                  // Special handling for danmartinbilledo@ymail.com - make them admin
+                  const userRole = session.user.email === 'danmartinbilledo@ymail.com' ? 'admin' : 'user'
+                  console.log(`AuthProvider: Creating user with role: ${userRole}`)
+                  
                   const { error: insertError } = await supabase
                     .from('users')
                     .insert({
                       id: session.user.id,
                       email: session.user.email,
-                      role: 'user',
+                      role: userRole,
                       created_at: session.user.created_at,
-                      updated_at: session.user.updated_at || session.user.created_at,
                     })
                     .single()
                   
@@ -79,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUser({
                       id: session.user.id,
                       email: session.user.email || '',
-                      role: 'user',
+                      role: userRole,
                       created_at: session.user.created_at,
                       updated_at: session.user.updated_at || session.user.created_at,
                     })
@@ -89,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     setUser({
                       id: session.user.id,
                       email: session.user.email || '',
-                      role: 'user',
+                      role: userRole,
                       created_at: session.user.created_at,
                       updated_at: session.user.updated_at || session.user.created_at,
                     })
@@ -97,10 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } catch (err) {
                   console.error('AuthProvider: Error in user creation:', err)
                   // Use fallback user object
+                  const userRole = session.user.email === 'danmartinbilledo@ymail.com' ? 'admin' : 'user'
                   setUser({
                     id: session.user.id,
                     email: session.user.email || '',
-                    role: 'user',
+                    role: userRole,
                     created_at: session.user.created_at,
                     updated_at: session.user.updated_at || session.user.created_at,
                   })
@@ -195,10 +199,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single()
 
         if (!userError && userData) {
+          console.log('AuthProvider: User data loaded after signin:', userData)
           setUser(userData)
+        } else if (userError && userError.code === 'PGRST116') {
+          // User doesn't exist in database, create them
+          console.log('AuthProvider: User not found after signin, creating...')
+          const userRole = data.user.email === 'danmartinbilledo@ymail.com' ? 'admin' : 'user'
+          
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              role: userRole,
+              created_at: data.user.created_at,
+            })
+            .single()
+          
+          if (!insertError) {
+            console.log('AuthProvider: User created after signin with role:', userRole)
+            setUser({
+              id: data.user.id,
+              email: data.user.email || '',
+              role: userRole,
+              created_at: data.user.created_at,
+              updated_at: data.user.updated_at || data.user.created_at,
+            })
+          } else {
+            console.error('AuthProvider: Error creating user after signin:', insertError)
+            // Use fallback user object
+            setUser({
+              id: data.user.id,
+              email: data.user.email || '',
+              role: userRole,
+              created_at: data.user.created_at,
+              updated_at: data.user.updated_at || data.user.created_at,
+            })
+          }
         }
       } catch (err) {
         console.error('Error refreshing user data after signin:', err)
+        // Use fallback user object
+        const userRole = data.user.email === 'danmartinbilledo@ymail.com' ? 'admin' : 'user'
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          role: userRole,
+          created_at: data.user.created_at,
+          updated_at: data.user.updated_at || data.user.created_at,
+        })
       }
     }
     

@@ -51,7 +51,13 @@ export interface Payment {
   updated_at: string
   products?: {
     title: string
+    brand?: string
     description?: string
+  }
+  users?: {
+    first_name?: string
+    last_name?: string
+    email: string
   }
 }
 

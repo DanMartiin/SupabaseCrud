@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { createClient } from '@/lib/supabase'
 import { Product, User, AdminStats } from '@/types'
@@ -26,9 +26,10 @@ export function AdminDashboard() {
     if (user) {
       fetchDashboardData()
     }
-  }, [user, currentPage, searchQuery])
+  }, [user, currentPage, searchQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
+    console.log('Fetching dashboard data...')
     setLoading(true)
     setError(null)
 
@@ -53,9 +54,11 @@ export function AdminDashboard() {
       if (productsError) {
         console.error('Error fetching products:', productsError)
         setError('Failed to load products')
+        setLoading(false)
         return
       }
 
+      console.log('Products fetched successfully:', productsData?.length || 0)
       setProducts(productsData || [])
       setTotalPages(Math.ceil((count || 0) / itemsPerPage))
 
@@ -86,9 +89,10 @@ export function AdminDashboard() {
       console.error('Error fetching dashboard data:', error)
       setError('An unexpected error occurred')
     } finally {
+      console.log('Dashboard data fetch completed')
       setLoading(false)
     }
-  }
+  }, [searchQuery, currentPage, supabase])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

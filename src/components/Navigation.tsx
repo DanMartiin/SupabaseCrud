@@ -24,18 +24,77 @@ export function Navigation() {
 
   const fetchUserProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user?.id)
-        .single()
+      console.log('Fetching user profile for:', user?.email)
+      
+      // Special handling for danmartinbilledo@ymail.com - always ensure they're admin
+      if (user?.email === 'danmartinbilledo@ymail.com') {
+        console.log('Special admin user detected: danmartinbilledo@ymail.com')
+        
+        // First try to fetch existing user
+        const { data: existingUser, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single()
 
-      if (error) {
-        console.error('Error fetching user profile:', error)
-        return
+        if (fetchError || !existingUser) {
+          console.log('Creating admin user for danmartinbilledo@ymail.com')
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email,
+              role: 'admin',
+              created_at: new Date().toISOString(),
+            })
+            .select()
+            .single()
+
+          if (!createError && newUser) {
+            console.log('Admin user created successfully:', newUser)
+            setUserProfile(newUser)
+            return
+          } else {
+            console.error('Error creating admin user:', createError)
+          }
+        } else {
+          // User exists, ensure they have admin role
+          if (existingUser.role !== 'admin') {
+            console.log('Updating user role to admin')
+            const { data: updatedUser, error: updateError } = await supabase
+              .from('users')
+              .update({ role: 'admin' })
+              .eq('id', user.id)
+              .select()
+              .single()
+
+            if (!updateError && updatedUser) {
+              console.log('User role updated to admin:', updatedUser)
+              setUserProfile(updatedUser)
+              return
+            }
+          } else {
+            console.log('Admin user already exists:', existingUser)
+            setUserProfile(existingUser)
+            return
+          }
+        }
+      } else {
+        // Regular user fetch
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user?.id)
+          .single()
+
+        if (error) {
+          console.error('Error fetching user profile:', error)
+          return
+        }
+
+        console.log('User profile loaded:', data)
+        setUserProfile(data)
       }
-
-      setUserProfile(data)
     } catch (error) {
       console.error('Error fetching user profile:', error)
     }
@@ -55,6 +114,19 @@ export function Navigation() {
       window.location.href = `/products?search=${encodeURIComponent(searchQuery.trim())}`
     }
   }
+
+  // Admin check - only danmartinbilledo@ymail.com or users with admin role in database
+  const isAdmin = user?.email === 'danmartinbilledo@ymail.com' || (userProfile && userProfile.role === 'admin')
+
+  // Debug logging
+  console.log('Navigation Debug:', {
+    user: user?.email,
+    userProfile: userProfile,
+    canViewAdmin: canViewAdminDashboard(userProfile),
+    isSpecialEmail: user?.email === 'danmartinbilledo@ymail.com',
+    isAdmin: isAdmin,
+    shouldShowAddProduct: user && isAdmin
+  });
 
   return (
     <nav className="bg-white shadow-sm border-b">
@@ -116,6 +188,17 @@ export function Navigation() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Add Product Button for Admins */}
+            {user && isAdmin && (
+              <Link
+                href="/products/create"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>Add Product</span>
+              </Link>
+            )}
+            
             {user ? (
               <div className="relative group">
                 <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
@@ -136,7 +219,7 @@ export function Navigation() {
                     <UserIcon className="h-4 w-4" />
                     <span>Account</span>
                   </Link>
-                  {canViewAdminDashboard(userProfile) && (
+                  {isAdmin && (
                     <Link
                       href="/admin"
                       className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -245,6 +328,18 @@ export function Navigation() {
               {/* Mobile User Menu */}
               {user ? (
                 <div className="border-t border-gray-200 pt-6 mt-6">
+                  {/* Add Product Button for Admins (Mobile) */}
+                  {isAdmin && (
+                    <Link
+                      href="/products/create"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 w-full px-4 py-3 text-base text-white bg-blue-600 hover:bg-blue-700 transition-colors hover:bg-gray-50 rounded-lg mb-4"
+                    >
+                      <ShoppingBag className="h-5 w-5" />
+                      <span>Add Product</span>
+                    </Link>
+                  )}
+                  
                   <div className="flex items-center space-x-3 px-4 py-3 mb-4">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                       <UserIcon className="h-5 w-5 text-blue-600" />
@@ -262,16 +357,16 @@ export function Navigation() {
                       <UserIcon className="h-5 w-5" />
                       <span>Account</span>
                     </Link>
-                                      {canViewAdminDashboard(userProfile) && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center space-x-3 w-full px-4 py-3 text-base text-gray-600 hover:text-gray-900 transition-colors hover:bg-gray-50 rounded-lg"
-                    >
-                      <ShoppingBag className="h-5 w-5" />
-                      <span>Admin Panel</span>
-                    </Link>
-                  )}
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center space-x-3 w-full px-4 py-3 text-base text-gray-600 hover:text-gray-900 transition-colors hover:bg-gray-50 rounded-lg"
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false)
