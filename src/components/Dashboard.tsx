@@ -209,7 +209,6 @@ export function Dashboard() {
             amount: product.price,
             status: 'completed',
             payment_method: 'credit_card',
-            created_at: new Date().toISOString(),
           })
       )
 

@@ -100,34 +100,74 @@ export default function CheckoutPage() {
 
     setLoading(true)
     try {
-      // Create payment records for each item in cart
-      const paymentPromises = cart.map(product => 
-        supabase
-          .from('payments')
-          .insert({
-            user_id: user?.id,
-            product_id: product.id,
-            amount: product.price,
-            status: 'completed',
-            payment_method: 'credit_card',
-            created_at: new Date().toISOString(),
-          })
-      )
+      console.log('Starting checkout process...')
+      console.log('User ID:', user?.id)
+      console.log('Cart items:', cart)
 
-      await Promise.all(paymentPromises)
+      // First, ensure user exists in users table
+      const { error: userError } = await supabase
+        .from('users')
+        .upsert({
+          id: user?.id,
+          email: user?.email,
+          first_name: user?.first_name || '',
+          last_name: user?.last_name || '',
+          role: 'user',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
+
+      if (userError) {
+        console.error('Error ensuring user exists:', userError)
+        // Continue anyway, as the user might already exist
+      } else {
+        console.log('User record ensured in users table')
+      }
+
+      // Create payment records for each item in cart
+      const paymentPromises = cart.map(product => {
+        const paymentData = {
+          user_id: user?.id,
+          product_id: product.id,
+          amount: product.price,
+          status: 'completed',
+          payment_method: 'credit_card',
+          description: `Payment for ${product.title}`,
+        }
+        console.log('Inserting payment:', paymentData)
+        
+        return supabase
+          .from('payments')
+          .insert(paymentData)
+          .select()
+      })
+
+      const results = await Promise.all(paymentPromises)
+      
+      // Check for errors in any of the payment insertions
+      const errors = results.filter(result => result.error)
+      if (errors.length > 0) {
+        console.error('Payment insertion errors:', errors)
+        const errorMessages = errors.map(err => err.error?.message).join(', ')
+        throw new Error(`Failed to create ${errors.length} payment records: ${errorMessages}`)
+      }
+
+      console.log('All payments created successfully:', results)
       
       // Clear cart
       setCart([])
       localStorage.removeItem('cart')
       setSuccess(true)
       
-             // Redirect to homepage after 2 seconds
-       setTimeout(() => {
-         router.push('/')
-       }, 2000)
+      // Redirect to homepage after 2 seconds
+      setTimeout(() => {
+        router.push('/')
+      }, 2000)
     } catch (error) {
       console.error('Error during checkout:', error)
-      alert('Checkout failed. Please try again.')
+      alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
     } finally {
       setLoading(false)
     }
